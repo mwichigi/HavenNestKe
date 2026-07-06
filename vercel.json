@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "buildCommand": "cd client && npm install && npm run build",
+  "outputDirectory": "client/build",
+  "framework": "create-react-app",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "env": {
+    "REACT_APP_API_URL": "https://nestkenya-api.onrender.com/api",
+    "REACT_APP_GOOGLE_MAPS_KEY": "@google_maps_key"
+  }
+}
