@@ -36,20 +36,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ── Routes ──
-// TEMPORARY MIGRATION ROUTE — REMOVE AFTER USE
-app.get('/api/run-migration-xk92', async (req, res) => {
-  if (req.query.secret !== process.env.MIGRATE_SECRET) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  try {
-    const migrate = require('./config/migrate-inline');
-    await migrate();
-    res.json({ success: true, message: 'Migration complete' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 app.use('/api/auth', authRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/leases', leaseRoutes);
