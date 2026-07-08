@@ -11,6 +11,7 @@ export default function LandlordDashboard() {
   const [tab, setTab] = useState('Overview');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [leasePrefill, setLeasePrefill] = useState(null);
 
   useEffect(() => {
     api.get('/landlord/dashboard')
@@ -53,8 +54,8 @@ export default function LandlordDashboard() {
             {tab === 'Overview' && <Overview d={d} setTab={setTab} />}
             {tab === 'Properties' && <Properties properties={d.properties} navigate={navigate} />}
             {tab === 'Tenants' && <Tenants landlordId={user?.id} />}
-            {tab === 'Viewings' && <ViewingsTab />}
-            {tab === 'Leases' && <LeasesTab />}
+            {tab === 'Viewings' && <ViewingsTab onCreateLease={(v) => { setLeasePrefill({ property_id: v.property_id, tenant_id: v.tenant_id }); setTab('Leases'); }} />}
+            {tab === 'Leases' && <LeasesTab prefill={leasePrefill} onPrefillUsed={() => setLeasePrefill(null)} />}
             {tab === 'Maintenance' && <MaintenanceTab requests={d.maintenance} />}
             {tab === 'Payments' && <PaymentsTab arrears={d.arrears} />}
           </>
@@ -412,7 +413,7 @@ function MaintenanceRow({ r, onRespond, showActions }) {
 }
 
 // ── DEMO DATA (shown when DB is empty) ──
-function ViewingsTab() {
+function ViewingsTab({ onCreateLease }) {
   const [viewings, setViewings] = useState([]);
   const [loading, setLoading] = useState(true);
   const load = () => {
@@ -469,19 +470,29 @@ function ViewingsTab() {
             </div>
           )}
           {v.status === 'confirmed' && (
-            <button onClick={() => respond(v.id, 'completed')} className="w-full mt-3 bg-gray-100 text-gray-700 text-xs font-bold py-2 rounded-xl">Mark as Completed</button>
+            <div className="flex gap-2 mt-3">
+              <button onClick={() => onCreateLease(v)} className="flex-1 bg-green-500 text-white text-xs font-bold py-2 rounded-xl">Create Lease</button>
+              <button onClick={() => respond(v.id, 'completed')} className="flex-1 bg-gray-100 text-gray-700 text-xs font-bold py-2 rounded-xl">Mark as Completed</button>
+            </div>
           )}
         </div>
       ))}
     </div>
   );
 }
-function LeasesTab() {
+function LeasesTab({ prefill, onPrefillUsed }) {
   const [leases, setLeases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ property_id: '', tenant_id: '', start_date: '', end_date: '', monthly_rent: '', deposit_amount: '' });
   const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    if (prefill) {
+      setForm(f => ({ ...f, property_id: prefill.property_id, tenant_id: prefill.tenant_id }));
+      setShowForm(true);
+      if (onPrefillUsed) onPrefillUsed();
+    }
+  }, [prefill]);
   const load = () => {
     api.get('/landlord/leases')
       .then(res => setLeases(res.data.leases || []))
