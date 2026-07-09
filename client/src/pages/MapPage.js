@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
+import api from '../utils/api';
 
 const MAP_CENTER = { lat: -1.3521, lng: 36.8219 };
 
@@ -46,6 +47,27 @@ export default function MapPage() {
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
   const [driveTimes, setDriveTimes] = useState({});
+  const [properties, setProperties] = useState([]);
+  useEffect(() => {
+    Promise.all([
+      api.get('/properties?status=available&limit=100'),
+      api.get('/properties?status=occupied&limit=100'),
+    ]).then(([availRes, occRes]) => {
+      const all = [...(availRes.data.properties || []), ...(occRes.data.properties || [])];
+      const mapped = all
+        .filter(p => p.latitude && p.longitude)
+        .map(p => ({
+          id: p.id,
+          lat: Number(p.latitude),
+          lng: Number(p.longitude),
+          title: p.title,
+          rent: Number(p.rent_amount),
+          bedrooms: p.bedrooms,
+          status: p.is_new_build ? 'new_build' : p.status,
+        }));
+      setProperties(mapped);
+    }).catch(err => console.error('Failed to load properties for map', err));
+  }, []);
 
   const apiKey = process.env.REACT_APP_GOOGLE_MAPS_KEY;
   const keyMissing = !apiKey || apiKey === 'PASTE_YOUR_KEY_HERE' || apiKey === 'placeholder';
@@ -54,7 +76,7 @@ export default function MapPage() {
     googleMapsApiKey: apiKey || '',
   });
 
-  const filtered = DEMO_PROPERTIES.filter(p =>
+  const filtered = properties.filter(p =>
     filter === 'all' ? true : p.status === filter
   );
 
@@ -71,12 +93,12 @@ export default function MapPage() {
   }, []);
 
   useEffect(() => {
-    if (!isLoaded || !userLocation || !window.google) return;
+    if (!isLoaded || !userLocation || !window.google || properties.length === 0) return;
     const service = new window.google.maps.DistanceMatrixService();
     service.getDistanceMatrix(
       {
         origins: [userLocation],
-        destinations: DEMO_PROPERTIES.map(p => ({ lat: p.lat, lng: p.lng })),
+        destinations: properties.map(p => ({ lat: p.lat, lng: p.lng })),
         travelMode: window.google.maps.TravelMode.DRIVING,
         unitSystem: window.google.maps.UnitSystem.METRIC,
       },
@@ -84,7 +106,7 @@ export default function MapPage() {
         if (status !== 'OK' || !response) return;
         const results = {};
         response.rows[0].elements.forEach((el, i) => {
-          const propId = DEMO_PROPERTIES[i].id;
+          const propId = properties[i].id;
           if (el.status === 'OK') {
             results[propId] = { distance: el.distance.text, duration: el.duration.text };
           }
@@ -92,7 +114,7 @@ export default function MapPage() {
         setDriveTimes(results);
       }
     );
-  }, [isLoaded, userLocation]);
+  }, [isLoaded, userLocation, properties]);
 
   const getDirectionsUrl = (prop) => {
     const destination = prop.lat + ',' + prop.lng;
