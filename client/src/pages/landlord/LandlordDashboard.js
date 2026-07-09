@@ -2,6 +2,37 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+
+const mapPickerStyle = { width: '100%', height: '220px', borderRadius: '12px' };
+const KENYA_CENTER = { lat: -1.2921, lng: 36.8219 };
+
+function LocationPicker({ lat, lng, onPick }) {
+  const apiKey = process.env.REACT_APP_GOOGLE_MAPS_KEY;
+  const { isLoaded } = useJsApiLoader({ googleMapsApiKey: apiKey || '' });
+  if (!apiKey) {
+    return <p className="text-xs text-red-500">Map unavailable: missing Google Maps API key.</p>;
+  }
+  if (!isLoaded) {
+    return <p className="text-xs text-gray-400">Loading map...</p>;
+  }
+  const position = (lat && lng) ? { lat: Number(lat), lng: Number(lng) } : KENYA_CENTER;
+  return (
+    <div>
+      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">
+        Pin Location on Map {lat && lng ? '✅' : '(tap map to set)'}
+      </label>
+      <GoogleMap
+        mapContainerStyle={mapPickerStyle}
+        center={position}
+        zoom={lat && lng ? 15 : 6}
+        onClick={(e) => onPick(e.latLng.lat(), e.latLng.lng())}
+      >
+        {lat && lng && <Marker position={position} />}
+      </GoogleMap>
+    </div>
+  );
+}
 
 const TABS = ['Overview', 'Properties', 'Tenants', 'Viewings', 'Leases', 'Maintenance', 'Payments'];
 
@@ -186,6 +217,11 @@ function Properties({ properties, navigate }) {
                 value={form[f.key] || ''} onChange={e => setForm({ ...form, [f.key]: e.target.value })} />
             </div>
           ))}
+          <LocationPicker
+            lat={form.latitude}
+            lng={form.longitude}
+            onPick={(lat, lng) => setForm({ ...form, latitude: lat, longitude: lng })}
+          />
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Bedrooms</label>
