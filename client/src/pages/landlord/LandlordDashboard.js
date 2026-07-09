@@ -2,14 +2,16 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-maps/api';
 
 const mapPickerStyle = { width: '100%', height: '220px', borderRadius: '12px' };
 const KENYA_CENTER = { lat: -1.2921, lng: 36.8219 };
+const PICKER_LIBRARIES = ['places'];
 
 function LocationPicker({ lat, lng, onPick }) {
   const apiKey = process.env.REACT_APP_GOOGLE_MAPS_KEY;
-  const { isLoaded } = useJsApiLoader({ googleMapsApiKey: apiKey || '' });
+  const { isLoaded } = useJsApiLoader({ googleMapsApiKey: apiKey || '', libraries: PICKER_LIBRARIES });
+  const [autocomplete, setAutocomplete] = useState(null);
   if (!apiKey) {
     return <p className="text-xs text-red-500">Map unavailable: missing Google Maps API key.</p>;
   }
@@ -20,16 +22,41 @@ function LocationPicker({ lat, lng, onPick }) {
   return (
     <div>
       <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">
-        Pin Location on Map {lat && lng ? '✅' : '(tap map to set)'}
+        Pin Location on Map {lat && lng ? '✅' : '(search or tap map to set)'}
       </label>
+      <Autocomplete
+        onLoad={setAutocomplete}
+        onPlaceChanged={() => {
+          if (!autocomplete) return;
+          const place = autocomplete.getPlace();
+          if (place.geometry && place.geometry.location) {
+            onPick(place.geometry.location.lat(), place.geometry.location.lng());
+          }
+        }}
+      >
+        <input
+          type="text"
+          placeholder="Search an address, e.g. Rongai, Kenya"
+          className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-green-400 mb-2"
+        />
+      </Autocomplete>
       <GoogleMap
         mapContainerStyle={mapPickerStyle}
         center={position}
-        zoom={lat && lng ? 15 : 6}
+        zoom={lat && lng ? 16 : 6}
         onClick={(e) => onPick(e.latLng.lat(), e.latLng.lng())}
       >
-        {lat && lng && <Marker position={position} />}
+        {lat && lng && (
+          <Marker
+            position={position}
+            draggable
+            onDragEnd={(e) => onPick(e.latLng.lat(), e.latLng.lng())}
+          />
+        )}
       </GoogleMap>
+      {lat && lng && (
+        <p className="text-[10px] text-gray-400 mt-1">Drag the pin to fine-tune the exact location.</p>
+      )}
     </div>
   );
 }
