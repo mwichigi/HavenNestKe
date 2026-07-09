@@ -1,0 +1,6 @@
+name = "havennestke"
+compatibility_date = "2026-01-01"
+
+[assets]
+directory = "./build"
+not_found_handling = "single-page-application"
