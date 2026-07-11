@@ -29,8 +29,10 @@ const ALL_PROPERTIES = [
 export default function Layout({ children }) {
   const navigate     = useNavigate();
   const { pathname } = useLocation();
-  const { user }     = useAuth();
+  const { user, logout } = useAuth();
   const [photo, setPhoto]       = useState(localStorage.getItem('nestkenya_photo') || null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [query, setQuery]       = useState('');
   const [results, setResults]   = useState([]);
   const [showDrop, setShowDrop] = useState(false);
@@ -116,6 +118,97 @@ export default function Layout({ children }) {
           </div>
         </div>
       </aside>
+      {/* ── MOBILE TOP BAR ── */}
+      <header className="md:hidden flex items-center justify-between bg-gray-900 px-4 py-3 sticky top-0 z-50">
+        <button onClick={() => setMenuOpen(true)} className="text-white text-2xl leading-none p-1">☰</button>
+        <span className="font-serif text-lg font-bold text-white cursor-pointer" onClick={() => navigate('/home')}>
+          Have<span className="text-green-400">NestKe</span>
+        </span>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setMobileSearchOpen(s => !s)} className="text-white text-lg">🔍</button>
+          {isAdmin && (
+            <button onClick={() => navigate('/admin')} className="text-white text-lg">🛡️</button>
+          )}
+          <button onClick={() => navigate('/profile')} className="w-8 h-8 rounded-full overflow-hidden border-2 border-green-400 flex-shrink-0">
+            {photo
+              ? <img src={photo} alt="Profile" className="w-full h-full object-cover" />
+              : <div className="w-full h-full bg-green-100 text-green-700 font-bold text-xs flex items-center justify-center">
+                  {user?.full_name?.charAt(0) || 'U'}
+                </div>
+            }
+          </button>
+        </div>
+      </header>
+
+      {/* ── MOBILE SEARCH (expandable) ── */}
+      {mobileSearchOpen && (
+        <div className="md:hidden bg-white px-4 py-3 border-b border-gray-200 sticky top-[52px] z-40">
+          <input
+            type="text"
+            autoFocus
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="w-full bg-gray-100 rounded-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-green-400"
+            placeholder="Search area, estate, town, property..."
+          />
+          {showDrop && results.length > 0 && (
+            <div className="mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+              {results.map(prop => (
+                <button key={prop.id} onClick={() => { handleSelect(prop); setMobileSearchOpen(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors text-left border-b border-gray-50 last:border-0">
+                  <div className="w-9 h-9 bg-green-100 rounded-xl flex items-center justify-center text-base flex-shrink-0">🏢</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{prop.title}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">📍 {prop.town} · {prop.estate}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── MOBILE DRAWER ── */}
+      {menuOpen && (
+        <div className="md:hidden fixed inset-0 z-[60] flex">
+          <div className="w-72 bg-gray-900 h-full flex flex-col">
+            <div className="px-6 py-6 border-b border-gray-800 flex items-center justify-between">
+              <span className="font-serif text-xl font-bold text-white">
+                Have<span className="text-green-400">NestKe</span>
+              </span>
+              <button onClick={() => setMenuOpen(false)} className="text-gray-400 text-2xl leading-none">×</button>
+            </div>
+            <nav className="flex flex-col gap-1 px-3 py-6 flex-1 overflow-y-auto">
+              {navItems.map(item => {
+                const isActive = pathname === item.path || pathname.startsWith(item.path + '/');
+                return (
+                  <button key={item.path} onClick={() => { navigate(item.path); setMenuOpen(false); }}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left w-full ${
+                      isActive ? 'bg-green-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                    }`}>
+                    <span className="text-lg">{item.icon}</span>
+                    {item.label}
+                  </button>
+                );
+              })}
+              {isAdmin && (
+                <button onClick={() => { navigate('/admin'); setMenuOpen(false); }}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-left w-full text-gray-400 hover:bg-gray-800 hover:text-white mt-2 border-t border-gray-800 pt-4">
+                  <span className="text-lg">🛡️</span>
+                  Admin Panel
+                </button>
+              )}
+            </nav>
+            <div className="px-4 py-4 border-t border-gray-800">
+              <button onClick={() => { logout(); navigate('/'); }} className="w-full text-xs text-red-400 border border-red-800 px-3 py-2.5 rounded-full">
+                Log out
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 bg-black/50" onClick={() => setMenuOpen(false)}></div>
+        </div>
+      )}
 
       {/* ── MAIN ── */}
       <div className="flex flex-col flex-1 md:ml-56 lg:ml-64 min-h-screen">
