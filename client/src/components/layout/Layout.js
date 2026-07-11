@@ -85,7 +85,7 @@ export default function Layout({ children }) {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
 
       {/* ── SIDEBAR (desktop) ── */}
       <aside className="hidden md:flex flex-col w-56 lg:w-64 bg-gray-900 min-h-screen fixed left-0 top-0 z-50">
@@ -118,58 +118,55 @@ export default function Layout({ children }) {
           </div>
         </div>
       </aside>
-      {/* ── MOBILE TOP BAR ── */}
-      <header className="md:hidden flex items-center justify-between bg-gray-900 px-4 py-3 sticky top-0 z-50">
-        <button onClick={() => setMenuOpen(true)} className="text-white text-2xl leading-none p-1">☰</button>
-        <span className="font-serif text-lg font-bold text-white cursor-pointer" onClick={() => navigate('/home')}>
-          Have<span className="text-green-400">NestKe</span>
-        </span>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setMobileSearchOpen(s => !s)} className="text-white text-lg">🔍</button>
-          {isAdmin && (
-            <button onClick={() => navigate('/admin')} className="text-white text-lg">🛡️</button>
-          )}
-          <button onClick={() => navigate('/profile')} className="w-8 h-8 rounded-full overflow-hidden border-2 border-green-400 flex-shrink-0">
-            {photo
-              ? <img src={photo} alt="Profile" className="w-full h-full object-cover" />
-              : <div className="w-full h-full bg-green-100 text-green-700 font-bold text-xs flex items-center justify-center">
-                  {user?.full_name?.charAt(0) || 'U'}
-                </div>
-            }
-          </button>
-        </div>
-      </header>
-
-      {/* ── MOBILE SEARCH (expandable) ── */}
-      {mobileSearchOpen && (
-        <div className="md:hidden bg-white px-4 py-3 border-b border-gray-200 sticky top-[52px] z-40">
+      {/* MOBILE TOP BAR */}
+      <header className="md:hidden flex items-center gap-2 bg-gray-900 px-3 py-2.5 sticky top-0 z-50">
+        <button onClick={() => setMenuOpen(true)} className="text-white text-2xl leading-none p-1 flex-shrink-0">☰</button>
+        {isAdmin && (
+          <button onClick={() => navigate('/admin')} className="text-white text-lg flex-shrink-0">🛡️</button>
+        )}
+        <div ref={searchRef} className="relative flex items-center flex-1 min-w-0">
+          <span className="text-gray-400 text-sm absolute left-3 z-10 pointer-events-none">🔍</span>
           <input
             type="text"
-            autoFocus
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full bg-gray-100 rounded-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-green-400"
-            placeholder="Search area, estate, town, property..."
+            onFocus={() => query && setShowDrop(true)}
+            className="w-full bg-gray-800 text-white placeholder-gray-400 rounded-full pl-8 pr-3 py-2 text-xs outline-none focus:ring-2 focus:ring-green-400 transition-all"
+            placeholder="Search..."
           />
-          {showDrop && results.length > 0 && (
-            <div className="mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-              {results.map(prop => (
-                <button key={prop.id} onClick={() => { handleSelect(prop); setMobileSearchOpen(false); }}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors text-left border-b border-gray-50 last:border-0">
-                  <div className="w-9 h-9 bg-green-100 rounded-xl flex items-center justify-center text-base flex-shrink-0">🏢</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{prop.title}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">📍 {prop.town} · {prop.estate}</p>
-                  </div>
-                </button>
-              ))}
+          {showDrop && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 max-h-[70vh] overflow-y-auto">
+              {results.length === 0 ? (
+                <div className="px-4 py-4 text-sm text-gray-400 text-center">
+                  No properties found for "<strong>{query}</strong>"
+                </div>
+              ) : (
+                results.map(prop => (
+                  <button key={prop.id} onClick={() => handleSelect(prop)}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors text-left border-b border-gray-50 last:border-0">
+                    <div className="w-9 h-9 bg-green-100 rounded-xl flex items-center justify-center text-base flex-shrink-0">🏢</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{prop.title}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">📍 {prop.town} · {prop.estate}</p>
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
           )}
         </div>
-      )}
+        <button onClick={() => navigate('/profile')} className="w-8 h-8 rounded-full overflow-hidden border-2 border-green-400 flex-shrink-0">
+          {photo
+            ? <img src={photo} alt="Profile" className="w-full h-full object-cover" />
+            : <div className="w-full h-full bg-green-100 text-green-700 font-bold text-xs flex items-center justify-center">
+                {user?.full_name?.charAt(0) || 'U'}
+              </div>
+          }
+        </button>
+      </header>
 
-      {/* ── MOBILE DRAWER ── */}
+      {/* MOBILE DRAWER */}
       {menuOpen && (
         <div className="md:hidden fixed inset-0 z-[60] flex">
           <div className="w-72 bg-gray-900 h-full flex flex-col">
@@ -210,13 +207,12 @@ export default function Layout({ children }) {
         </div>
       )}
 
-      {/* ── MAIN ── */}
+      {/* MAIN */}
       <div className="flex flex-col flex-1 md:ml-56 lg:ml-64 min-h-screen">
 
         {/* Top bar */}
         <header className="hidden md:flex items-center justify-between bg-white border-b border-gray-200 px-8 py-4 sticky top-0 z-40">
 
-          {/* Admin Panel button — ONLY for admin account */}
           {isAdmin && (
             <button
               onClick={() => navigate('/admin')}
@@ -226,7 +222,6 @@ export default function Layout({ children }) {
             </button>
           )}
 
-          {/* Search */}
           <div ref={searchRef} className="relative flex items-center flex-1 max-w-lg">
             <span className="text-gray-400 text-lg absolute left-4 z-10">🔍</span>
             <input
@@ -276,7 +271,6 @@ export default function Layout({ children }) {
             )}
           </div>
 
-          {/* Right actions */}
           <div className="flex items-center gap-4 ml-6">
             <button className="relative text-gray-500 hover:text-gray-800 transition-colors" onClick={() => navigate('/profile/notifications')}>
               <span className="text-xl">🔔</span>
@@ -301,7 +295,7 @@ export default function Layout({ children }) {
         <main className="flex-1 pb-20 md:pb-0">{children}</main>
       </div>
 
-      {/* ── BOTTOM NAV (mobile) ── */}
+      {/* BOTTOM NAV (mobile) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
         <div className="flex">
           {navItems.slice(0, 5).map(item => {

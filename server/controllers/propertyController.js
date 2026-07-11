@@ -28,7 +28,7 @@ const getProperties = async (req, res) => {
       `SELECT p.*, u.full_name as owner_name, u.phone as owner_phone,
               u.is_verified as owner_verified
        FROM properties p
-       JOIN users u ON p.owner_id = u.id
+       LEFT JOIN users u ON p.owner_id = u.id
        WHERE ${whereClause}
        ORDER BY p.created_at DESC
        LIMIT $${idx} OFFSET $${idx + 1}`,
@@ -47,7 +47,7 @@ const getProperty = async (req, res) => {
       `SELECT p.*, u.full_name as owner_name, u.phone as owner_phone,
               u.is_verified as owner_verified, u.profile_photo_url as owner_photo
        FROM properties p
-       JOIN users u ON p.owner_id = u.id
+       LEFT JOIN users u ON p.owner_id = u.id
        WHERE p.id = $1`,
       [req.params.id]
     );
