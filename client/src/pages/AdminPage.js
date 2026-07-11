@@ -1,5 +1,5 @@
 // Hardcoded admin email — this account can never be deleted
-const ADMIN_EMAIL = "ngangamj828@gmail.com";
+const PROTECTED_ADMIN_EMAILS = ["ngangamj828@gmail.com", "jameskarira820@gmail.com"];
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -67,7 +67,7 @@ export default function AdminPage() {
 
   const deleteUser = async (id) => {
     const target = users.find(u => u.id === id);
-    if (target?.email === ADMIN_EMAIL) {
+    if (PROTECTED_ADMIN_EMAILS.includes(target?.email)) {
       alert('The admin account cannot be deleted. It is protected.');
       return;
     }
@@ -182,7 +182,11 @@ export default function AdminPage() {
                     <td className="py-3 pr-4">{u.rental_score}</td>
                     <td className="py-3 pr-4 text-gray-500">{new Date(u.created_at).toLocaleDateString()}</td>
                     <td className="py-3 text-right">
-                      <button onClick={() => deleteUser(u.id)} className="text-red-400 hover:text-red-300 text-xs font-semibold">Delete</button>
+                      {PROTECTED_ADMIN_EMAILS.includes(u.email) ? (
+                        <span className="text-gray-600 text-xs font-semibold">Protected</span>
+                      ) : (
+                        <button onClick={() => deleteUser(u.id)} className="text-red-400 hover:text-red-300 text-xs font-semibold">Delete</button>
+                      )}
                     </td>
                   </tr>
                 ))}

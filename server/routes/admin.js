@@ -2,6 +2,7 @@ const express = require('express');
 const r = express.Router();
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const db = require('../config/db');
+const PROTECTED_ADMIN_EMAILS = ['ngangamj828@gmail.com', 'jameskarira820@gmail.com'];
 
 // All admin routes require login + admin role
 r.use(authMiddleware, requireRole('admin'));
@@ -53,6 +54,10 @@ r.patch('/users/:id/role', async (req, res) => {
 
 r.delete('/users/:id', async (req, res) => {
   try {
+    const check = await db.query('SELECT email FROM users WHERE id = $1', [req.params.id]);
+    if (check.rows.length > 0 && PROTECTED_ADMIN_EMAILS.includes(check.rows[0].email)) {
+      return res.status(403).json({ error: 'This admin account is protected and cannot be deleted.' });
+    }
     await db.query('DELETE FROM users WHERE id = $1', [req.params.id]);
     res.json({ message: 'User deleted' });
   } catch (err) {
